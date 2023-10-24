@@ -1,0 +1,6 @@
+pika
+scikit-learn==1.2.2
+keras==2.12
+librosa==0.10.0.post2
+pandas==1.1.5
+tensorflow==2.12

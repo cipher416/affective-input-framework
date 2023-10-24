@@ -1,0 +1,2 @@
+pika
+SpeechRecognition<=3.1.2
