@@ -24,9 +24,9 @@ def callback(ch, method, properties, body):
     body = json.loads(body.decode('UTF-8'))
     response = openai.Completion.create(
         model='gpt-3.5-turbo-instruct',
-        prompt='Generate a response to the following text : ' + body['message'] + ' with the following emotion : ' + body['label']  
+        prompt='You are a conversational agent. Generate a response to the following text : ' + body['message'] + ' with the following emotion : ' + body['label']  
     )
-    print(response)
+    channel.basic_publish(exchange='test', routing_key='analysis.dialogue', body=json.dumps({"message":response['message']['choices'][0]['text'],"emotion":body['label']}))
     return
 
 channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)

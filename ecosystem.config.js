@@ -23,6 +23,10 @@ module.exports = {
   {
     name: "dialogue_generation_service",
     script: "./dialogue_generation_service/main.py"
+  },
+  {
+    name: "input_processing_service",
+    script: "./input_service/main.py",
   }
 ]
 }
