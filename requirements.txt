@@ -15,3 +15,5 @@ python-multipart<=0.0.6
 fastapi<=0.68.2
 moviepy<=1.0.3
 transformers==4.34.0
+python-dotenv<=0.16.0
+translate<=3.6.1
