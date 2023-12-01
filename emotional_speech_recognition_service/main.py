@@ -43,7 +43,7 @@ def get_features(path):
 connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 channel = connection.channel()
 queue_name = ''
-binding_key = 'input.voice'
+binding_key = 'input.voice.tone'
 channel.exchange_declare(exchange='test', exchange_type='topic')
 result = channel.queue_declare('')
 queue_name = result.method.queue
@@ -75,7 +75,8 @@ def callback(ch, method, properties, body):
     result = model.predict(x_test)
     result = np.array(result)
     transformed_result = encoder.inverse_transform(result)
-    channel.basic_publish(exchange='test', routing_key='emo.voice', body=transformed_result[0][0])
+    channel.basic_publish(exchange='test', routing_key=properties.reply_to,properties=pika.BasicProperties(correlation_id = \
+                                    properties.correlation_id),body=transformed_result[0][0])
     return
 
 channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)

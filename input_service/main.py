@@ -1,12 +1,13 @@
 from fastapi import FastAPI, UploadFile, File
 import uvicorn
 import pika
+import json
 import moviepy.editor as editor
 import base64
 import wave
+from service_client import ServiceClient 
 from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
-
 
 app.add_middleware(
     middleware_class=CORSMiddleware,
@@ -16,14 +17,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-    
-def callback(ch, method, properties, body):
-    print(body)
-    channel.stop_consuming()
-
-@app.post("/")
-async def root(file: bytes = File(...)):
+def read_video_file(file: bytes):
     with open('file.webm', 'wb') as writeFile:
         writeFile.write(file)
         writeFile.close()
@@ -35,76 +29,34 @@ async def root(file: bytes = File(...)):
     video.close()
     video = open('video.mp4', 'rb')
     video_bytes = video.read()
-    channel.basic_publish(exchange='test', routing_key='input.voice', body=base64.b64encode(wf))
-    channel.basic_publish(exchange='test', routing_key='input.video', body=base64.b64encode(video_bytes))
-    channel.start_consuming()
-    return {"message": "Hello World"}
+    return wf, video_bytes
+
+def call_services(audio_bytes, video_bytes):
+    facial_emotion_client = ServiceClient(binding_key='input.video')
+    facial_emotion_response = facial_emotion_client.call(base64.b64encode(video_bytes))
+    speech_to_text_client = ServiceClient(binding_key='input.voice')
+    speech_to_text_response = speech_to_text_client.call(base64.b64encode(audio_bytes))
+    voice_tone_emotion_client= ServiceClient(binding_key='input.voice.tone')
+    voice_tone_emotion_response = voice_tone_emotion_client.call(base64.b64encode(audio_bytes))
+    text_emotion_recognition_service = ServiceClient(binding_key='voice.text')
+    text_emotion_recognition_response = text_emotion_recognition_service.call(speech_to_text_response)
+    emotion_recognition_service = ServiceClient(binding_key='analysis.emo')
+    dialogue_generation_service = ServiceClient(binding_key='analysis.dialogue')
+    emotion_recognition_response =  emotion_recognition_service.call(json.dumps({
+        "voice":voice_tone_emotion_response.decode("utf-8") ,
+        "text":text_emotion_recognition_response.decode("utf-8") ,
+        "face":facial_emotion_response.decode("utf-8")
+    }))
+    print(speech_to_text_response)
+    dialogue_generation_response = dialogue_generation_service.call(json.dumps({"message": speech_to_text_response.decode("utf-8") , "label": emotion_recognition_response.decode("utf-8")}))
+    return json.loads(dialogue_generation_response.decode("utf-8"))
+
+@app.post("/")
+async def root(file: bytes = File(...)):
+    audio_bytes, video_bytes = read_video_file(file)
+    response = call_services(audio_bytes, video_bytes)
+    return response
 
 if __name__ == "__main__":
     connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-    channel = connection.channel()
-    channel.exchange_declare(exchange='test', exchange_type='topic')
-    result = channel.queue_declare('')
-    channel.exchange_declare(exchange='test', exchange_type='topic')
-    queue_name = result.method.queue
-    channel.queue_bind(
-            exchange='test', queue=queue_name, routing_key='analysis.dialogue')
-    channel.basic_consume(queue='', on_message_callback=callback,auto_ack=True)
-    uvicorn.run(app, host='localhost', port=8000)
-# CHUNK = 1024
-# FORMAT = pyaudio.paInt16
-# CHANNELS = 1
-# RATE = 44100
-# RECORD_SECONDS = 5
-# WAVE_OUTPUT_FILENAME = "output.wav"
-
-# p = pyaudio.PyAudio()
-
-# stream = p.open(format=FORMAT,
-#                 channels=CHANNELS,
-#                 rate=RATE,
-#                 input=True,
-#                 frames_per_buffer=CHUNK)
-
-# print("* recording")
-
-# frames = []
-
-# for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-#     data = stream.read(CHUNK)
-#     frames.append(data)
-
-# print("* done recording")
-
-# stream.stop_stream()
-# stream.close()
-# p.terminate()
-
-# voice_binary_data = b''.join(frames)
-
-# wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
-# wf.setnchannels(CHANNELS)
-# wf.setsampwidth(p.get_sample_size(FORMAT))
-# wf.setframerate(RATE)
-# wf.writeframes(voice_binary_data)
-# wf.close()
-
-# wf = wave.open(WAVE_OUTPUT_FILENAME, 'rb')
-# wf = wf.readframes(wf.getnframes())
-
-# video = open('video.mp4', 'rb')
-# video_bytes = video.read()
-
-
-
-# connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-# channel = connection.channel()
-
-# channel.exchange_declare(exchange='test', exchange_type='topic')
-
-# channel.basic_publish(exchange='test', routing_key='input.voice', body=base64.b64encode(wf))
-
-# channel.basic_publish(exchange='test', routing_key='input.video', body=base64.b64encode(video_bytes))
-
-# channel.basic_publish(exchange='test', routing_key='voice.text', body="test")
-
+    uvicorn.run(app, host='10.22.70.113', port=8000)

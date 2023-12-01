@@ -11,7 +11,6 @@ face_classification_model = load_model("./facial_emotion_recognition_service/fer
 
 face_detector = cv2.CascadeClassifier('./facial_emotion_recognition_service/haarcascades/haarcascade_frontalface_default.xml')
 
-
 connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 channel = connection.channel()
 queue_name = ''
@@ -22,12 +21,12 @@ queue_name = result.method.queue
 channel.queue_bind(
         exchange='test', queue=queue_name, routing_key=binding_key)
 
-
     
 def callback(ch, method, properties, body):
     with open('video.mp4', 'wb') as file:
         file.write(base64.b64decode(body))
     cap = cv2.VideoCapture('video.mp4')
+    print('a')
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
@@ -35,6 +34,7 @@ def callback(ch, method, properties, body):
         frame = cv2.resize(frame, (1000, 600))
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         total_faces = face_detector.detectMultiScale(gray_frame, scaleFactor=1.3, minNeighbors=5)
+        last_index = 4
         for (x, y, w, h) in total_faces:
             cv2.rectangle(frame, (x, y-50), (x+w, y+h+10), (0, 255, 0), 4)
             crop_image = gray_frame[y:y + h, x:x + w]
@@ -45,7 +45,11 @@ def callback(ch, method, properties, body):
             gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             total_faces = face_detector.detectMultiScale(gray_frame, scaleFactor=1.3, minNeighbors=5)
             index = int(np.argmax(emotion_prediction))
-            channel.basic_publish(exchange='test', routing_key='emo.face', body=emotion_dict[index])
+            last_index = index
+            break
+        channel.basic_publish(exchange='test', routing_key=properties.reply_to,properties=pika.BasicProperties(correlation_id = \
+                                    properties.correlation_id),body=emotion_dict[last_index])
+        
 
     
 

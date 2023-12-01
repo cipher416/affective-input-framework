@@ -25,7 +25,9 @@ def callback(ch, method, properties, body):
         result = 'nothing'
     else:
         result = result['alternative'][0]['transcript']
-    channel.basic_publish(exchange='test', routing_key='voice.text', body=result)
+    # channel.basic_publish(exchange='test', routing_key='voice.text', body=result)
+    channel.basic_publish(exchange='test', routing_key=properties.reply_to,properties=pika.BasicProperties(correlation_id = \
+                                    properties.correlation_id),body=result)
     return
 
 channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True, consumer_tag='input')
