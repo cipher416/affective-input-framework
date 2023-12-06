@@ -20,11 +20,10 @@ recognizer = sr.Recognizer()
 
 def callback(ch, method, properties, body):
     audio_data = sr.AudioData(frame_data=base64.b64decode(body), sample_rate=RATE, sample_width=2, channels=1)
-    result = recognizer.recognize_google(audio_data=audio_data, language='id', show_all=True)
+    result = recognizer.recognize_google(audio_data=audio_data, language='id')
+    print(result)
     if len(result) == 0:
         result = 'nothing'
-    else:
-        result = result['alternative'][0]['transcript']
     # channel.basic_publish(exchange='test', routing_key='voice.text', body=result)
     channel.basic_publish(exchange='test', routing_key=properties.reply_to,properties=pika.BasicProperties(correlation_id = \
                                     properties.correlation_id),body=result)

@@ -26,7 +26,7 @@ def callback(ch, method, properties, body):
     response = client.chat.completions.create(
         model='gpt-3.5-turbo-1106',
         messages=[
-            {"role": "system","content": 'You are a conversational agent. Generate a response to the following text : ' + body['message'] + ' with the following emotion : ' + body['label']}
+            {"role": "system","content": 'You are a conversational agent. Generate a response to the following text : ' + body['message'] + ' with the following emotion : ' + body['label'] + '. The response must be in the Indonesian language.'}
         ]
     )
     print(response)

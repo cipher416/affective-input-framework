@@ -18,3 +18,4 @@ transformers==4.34.0
 python-dotenv<=0.16.0
 translate<=3.6.1
 uvicorn<=0.24.0.post1
+pydantic<=1.10.13

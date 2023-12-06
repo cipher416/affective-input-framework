@@ -8,6 +8,10 @@ import wave
 from service_client import ServiceClient 
 from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
+from pydantic import BaseModel
+
+class Chat(BaseModel):
+    message: str
 
 app.add_middleware(
     middleware_class=CORSMiddleware,
@@ -49,12 +53,29 @@ def call_services(audio_bytes, video_bytes):
     }))
     print(speech_to_text_response)
     dialogue_generation_response = dialogue_generation_service.call(json.dumps({"message": speech_to_text_response.decode("utf-8") , "label": emotion_recognition_response.decode("utf-8")}))
-    return json.loads(dialogue_generation_response.decode("utf-8"))
+    dialogue_generation_response = json.loads(dialogue_generation_response.decode("utf-8"))
+    dialogue_generation_response['speech_transcript'] = speech_to_text_response.decode("utf-8")
+    return dialogue_generation_response
+
+def call_services_text(chat: Chat):
+    text_emotion_recognition_service = ServiceClient(binding_key='voice.text')
+    text_emotion_recognition_response = text_emotion_recognition_service.call(chat.message)
+    dialogue_generation_service = ServiceClient(binding_key='analysis.dialogue')
+    dialogue_generation_response = dialogue_generation_service.call(json.dumps({"message": chat.message , "label": json.loads(text_emotion_recognition_response.decode("utf-8"))['label']}))
+    dialogue_generation_response = json.loads(dialogue_generation_response.decode("utf-8"))
+    dialogue_generation_response['speech_transcript'] = chat.message
+    return dialogue_generation_response
 
 @app.post("/")
 async def root(file: bytes = File(...)):
     audio_bytes, video_bytes = read_video_file(file)
     response = call_services(audio_bytes, video_bytes)
+    return response
+
+@app.post("/text")
+async def text(chat: Chat):
+    response = call_services_text(chat=chat)
+    print(response)
     return response
 
 if __name__ == "__main__":
