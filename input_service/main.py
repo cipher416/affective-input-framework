@@ -7,8 +7,12 @@ import base64
 import wave
 from service_client import ServiceClient 
 from fastapi.middleware.cors import CORSMiddleware
-app = FastAPI()
+import os
+import dotenv
 from pydantic import BaseModel
+dotenv.load_dotenv()
+
+app = FastAPI()
 
 class Chat(BaseModel):
     message: str
@@ -82,4 +86,4 @@ async def text(chat: Chat):
 
 if __name__ == "__main__":
     connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-    uvicorn.run(app, host='10.22.70.113', port=8000)
+    uvicorn.run(app, host=os.getenv("BACKEND_HOSTNAME"), port=8000)
