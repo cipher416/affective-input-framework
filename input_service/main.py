@@ -78,6 +78,8 @@ async def text(chat: Chat):
     print(response)
     return response
 
+
+
 if __name__ == "__main__":
     connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
     uvicorn.run(app, host='10.22.70.113', port=8000)

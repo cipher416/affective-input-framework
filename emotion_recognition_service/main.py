@@ -10,10 +10,26 @@ result = channel.queue_declare('')
 queue_name = result.method.queue
 channel.queue_bind(
             exchange='test', queue=queue_name, routing_key='analysis.emo')
+weights_mapping = {
+    "voice": 0.2,
+    "text": 0.3,
+    "face": 0.5
+}
+
+def choose_emotion(emotions_dict):
+    emotion_weights = {"neutral": 0}
+    for key, val in emotions_dict.items():
+        if val in emotion_weights:
+            emotion_weights[val] += weights_mapping[key]
+        else:
+            emotion_weights[val] = weights_mapping[key]
+    sorted(emotion_weights.keys(), key=lambda x:x[1])
+    return list(emotion_weights.keys())[0]
+    
 
 def callback(ch, method, properties, body):
     body = json.loads(body.decode('UTF-8'))
-    channel.basic_publish(exchange='test', routing_key=properties.reply_to,properties=pika.BasicProperties(correlation_id = properties.correlation_id),body=body['face'])
+    channel.basic_publish(exchange='test', routing_key=properties.reply_to,properties=pika.BasicProperties(correlation_id = properties.correlation_id),body=choose_emotion(body))
 
 channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
 print('service started')
