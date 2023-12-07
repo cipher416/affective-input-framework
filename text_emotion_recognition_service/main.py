@@ -5,7 +5,7 @@ import json
 from dotenv import load_dotenv
 from openai import OpenAI
 import os
-load_dotenv('./dialogue_generation_service/.env')
+load_dotenv(dotenv_path='.env')
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 emotion_dict = ["anger", "disgust",  "fear", "joy", "neutral",  "sadness",  "surprise"]
 

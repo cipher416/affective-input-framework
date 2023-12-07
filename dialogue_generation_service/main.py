@@ -3,10 +3,10 @@ import speech_recognition as sr
 from openai import OpenAI
 import json
 from transformers import pipeline, set_seed
-
 import os
 from dotenv import load_dotenv
-load_dotenv('./dialogue_generation_service/.env')
+
+load_dotenv()
 
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
