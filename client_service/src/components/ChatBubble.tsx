@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+
 
 type Props = {
     chat?: Chat;
@@ -6,9 +6,6 @@ type Props = {
 }
 
 export default function ChatBubble({chat, isLoading = false}: Props) {
-    useEffect(() => {
-        console.log(chat, isLoading)
-    }, [isLoading])
     return (
         <div className={`chat ${chat?.sender === "bot" && !isLoading ? "chat-start" : "chat-end"}`}>
             <div className="chat-bubble">

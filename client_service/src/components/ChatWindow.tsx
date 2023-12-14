@@ -1,12 +1,13 @@
-import { useState, useEffect, useRef, FormEvent } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { useState, useRef, FormEvent } from "react";
 import RecordRTC, { getSeekableBlob} from "recordrtc";
 import axios from "axios";
 import ChatBubble from "./ChatBubble";
+import { toast } from 'react-toastify';
 
-
-const VideoRecorder = () => {
-    const [stream, setStream] = useState<MediaStream | null>(null);
-    const refVideo = useRef<any>(null);
+const ChatWindow = () => {
+    const [_, setStream] = useState<MediaStream | null>(null);
     const recorderRef = useRef<RecordRTC | null>(null);
     const [recording, setRecording] = useState<boolean>(false);
     const [chats, setChats] = useState<Chat[]>([]);
@@ -54,34 +55,30 @@ const VideoRecorder = () => {
       e.preventDefault()
       setRecording(true);
       setInput('');
-      const result = await axios.post(`${import.meta.env.VITE_BACKEND_URL!}/text`, {
-        "message" : input
-      }, {headers: { "Content-Type": "application/json" }});
-      const resultBody = result.data;
-      const chat: Chat = {
-        message: resultBody.message,
-        emotion: resultBody.emotion,
-        sender: "bot"
+      try {
+        const result = await toast.promise(axios.post(`${import.meta.env.VITE_BACKEND_URL!}/text`, {
+          "message" : input
+        }, {headers: { "Content-Type": "application/json" }}),
+          {
+            error: 'An error has occured.'
+          }
+        )
+        const resultBody = result.data;
+        const chat: Chat = {
+          message: resultBody.message,
+          emotion: resultBody.emotion,
+          sender: "bot"
+        }
+        const userChat: Chat = {
+          message: resultBody.speech_transcript,
+          emotion: resultBody.emotion,
+          sender: "user"
+        }
+        setChats(chats.concat([userChat, chat]));
+      } finally {
+        setRecording(false);
       }
-      const userChat: Chat = {
-        message: resultBody.speech_transcript,
-        emotion: resultBody.emotion,
-        sender: "user"
-      }
-      console.log(resultBody)
-      setChats(chats.concat([userChat, chat]));
-      console.log(chats);
-      setRecording(false);
     }
-
-  
-    useEffect(() => {
-      if (!refVideo.current) {
-        return;
-      }
-      
-    refVideo.current.srcObject = stream;
-    }, [stream, refVideo, chats]);
     
 
     return (
@@ -106,4 +103,4 @@ const VideoRecorder = () => {
         </div>
     );
 };
-export default VideoRecorder;
+export default ChatWindow;

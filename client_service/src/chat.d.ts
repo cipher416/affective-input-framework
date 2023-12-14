@@ -1,5 +1,5 @@
 type Chat = {
-    message: String;
-    sender: String;
-    emotion: String;
+    message: string;
+    sender: string;
+    emotion: string;
   }
