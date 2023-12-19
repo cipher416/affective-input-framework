@@ -1,6 +1,12 @@
 import pika
 import speech_recognition as sr
 import base64
+import wave
+from dotenv import load_dotenv
+from openai import OpenAI
+import os
+load_dotenv(dotenv_path='.env')
+client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 CHUNK = 1024
 CHANNELS = 1
@@ -19,15 +25,27 @@ channel.queue_bind(
 recognizer = sr.Recognizer()
 
 def callback(ch, method, properties, body):
-    audio_data = sr.AudioData(frame_data=base64.b64decode(body), sample_rate=RATE, sample_width=2, channels=1)
-    result = recognizer.recognize_google(audio_data=audio_data, language='id')
-    print(result)
-    if len(result) == 0:
-        result = 'nothing'
-    # channel.basic_publish(exchange='test', routing_key='voice.text', body=result)
-    channel.basic_publish(exchange='test', routing_key=properties.reply_to,properties=pika.BasicProperties(correlation_id = \
-                                    properties.correlation_id),body=result)
-    return
+    result = 'nothing'
+    wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+    wf.setnchannels(CHANNELS)
+    wf.setsampwidth(2)
+    wf.setframerate(RATE)
+    wf.writeframes(data=base64.b64decode(body))
+    wf.close()
+    try:
+        audio_file = open(WAVE_OUTPUT_FILENAME, "rb")
+        transcript = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file,
+            language='id'
+        )
+        result = transcript.text
+        print(result)
+        # channel.basic_publish(exchange='test', routing_key='voice.text', body=result)
+    finally:
+        channel.basic_publish(exchange='test', routing_key=properties.reply_to,properties=pika.BasicProperties(correlation_id = \
+                                        properties.correlation_id),body=result)
+
 
 channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True, consumer_tag='input')
 print("started")
