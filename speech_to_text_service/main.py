@@ -26,14 +26,8 @@ recognizer = sr.Recognizer()
 
 def callback(ch, method, properties, body):
     result = 'nothing'
-    wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
-    wf.setnchannels(CHANNELS)
-    wf.setsampwidth(2)
-    wf.setframerate(RATE)
-    wf.writeframes(data=base64.b64decode(body))
-    wf.close()
     try:
-        audio_file = open(WAVE_OUTPUT_FILENAME, "rb")
+        audio_file = open('audio.wav', "rb")
         transcript = client.audio.transcriptions.create(
             model="whisper-1",
             file=audio_file,

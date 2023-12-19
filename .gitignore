@@ -165,6 +165,6 @@ node_modules
 
 yarn.lock
 
-*.wav
-*.mp4
-*.webm
+.wav
+.mp4
+.webm
