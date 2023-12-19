@@ -38,7 +38,7 @@ def callback(ch, method, properties, body):
     filtered_result = [emo for emo in result if emo['label'] in emotion_dict]
     # channel.basic_publish(exchange='test', routing_key='emo.text', body=json.dumps({"message": body, "label": filtered_result[0]['label']}))
     channel.basic_publish(exchange='test', routing_key=properties.reply_to,properties=pika.BasicProperties(correlation_id = \
-                                    properties.correlation_id),body=json.dumps({"message": body, "label": filtered_result[0]['label']}))
+                                    properties.correlation_id),body=filtered_result[0]['label'])
     return
 
 channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)

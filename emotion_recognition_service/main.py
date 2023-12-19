@@ -11,19 +11,21 @@ queue_name = result.method.queue
 channel.queue_bind(
             exchange='test', queue=queue_name, routing_key='analysis.emo')
 weights_mapping = {
-    "voice": 0.2,
-    "text": 0.3,
-    "face": 0.5
+    "voice": 0.3,
+    "text": 0.5,
+    "face": 0.2
 }
 
 def choose_emotion(emotions_dict):
     emotion_weights = {"neutral": 0}
+    print(emotions_dict)
     for key, val in emotions_dict.items():
         if val in emotion_weights:
             emotion_weights[val] += weights_mapping[key]
         else:
             emotion_weights[val] = weights_mapping[key]
     sorted(emotion_weights.keys(), key=lambda x:x[1])
+    print(emotion_weights)
     return list(emotion_weights.keys())[0]
     
 
