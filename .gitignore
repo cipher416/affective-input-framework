@@ -160,11 +160,8 @@ cython_debug/
 #.idea/
 
 .vscode
-
 node_modules
-
+*.wav
+*.mp4
+*.webm
 yarn.lock
-
-.wav
-.mp4
-.webm
