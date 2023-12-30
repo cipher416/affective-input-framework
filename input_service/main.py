@@ -64,9 +64,11 @@ def call_services(audio_bytes, video_bytes):
 def call_services_text(chat: Chat):
     text_emotion_recognition_service = ServiceClient(binding_key='voice.text')
     text_emotion_recognition_response = text_emotion_recognition_service.call(chat.message)
+    print(text_emotion_recognition_response)
     dialogue_generation_service = ServiceClient(binding_key='analysis.dialogue')
-    dialogue_generation_response = dialogue_generation_service.call(json.dumps({"message": chat.message , "label": json.loads(text_emotion_recognition_response.decode("utf-8"))['label']}))
+    dialogue_generation_response = dialogue_generation_service.call(json.dumps({"message": chat.message , "label": text_emotion_recognition_response.decode('UTF-8')}))
     dialogue_generation_response = json.loads(dialogue_generation_response.decode("utf-8"))
+    print(dialogue_generation_response)    
     dialogue_generation_response['speech_transcript'] = chat.message
     return dialogue_generation_response
 
@@ -78,8 +80,8 @@ async def root(file: bytes = File(...)):
 
 @app.post("/text")
 async def text(chat: Chat):
+    print(chat)
     response = call_services_text(chat=chat)
-    print(response)
     return response
 
 
